@@ -150,18 +150,28 @@ class MemberStatusSensor(EetlijstEntity, SensorEntity):
     def extra_state_attributes(self) -> dict[str, Any]:
         """Week overview."""
         week: dict[str, str] = {}
+        week_guests: dict[str, int] = {}
+        week_open: dict[str, bool] = {}
         today = self.coordinator.today
         for offset in range(DAYS_AHEAD):
             d = today + timedelta(days=offset)
             day = self.coordinator.data.days.get(d)
             if day is not None:
-                week[d.isoformat()] = day.status_of(self._uid)
+                key = d.isoformat()
+                week[key] = day.status_of(self._uid)
+                a = day.attendance.get(self._uid)
+                week_guests[key] = a.guests if a else 0
+                week_open[key] = day.open
         day = self.coordinator.day(0)
         att = day.attendance.get(self._uid) if day else None
+        members = list(self.coordinator.data.members)
         return {
             "name": self.coordinator.name_of(self._uid),
             "is_me": self._uid == self.coordinator.user_id,
+            "order": members.index(self._uid) if self._uid in members else 99,
             "guests": att.guests if att else 0,
             "comment": att.comment if att else None,
             "week": week,
+            "week_guests": week_guests,
+            "week_open": week_open,
         }

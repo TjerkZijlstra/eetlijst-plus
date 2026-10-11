@@ -244,7 +244,7 @@ class EetlijstApi:
         result = data.get("queryTodaysEvents")
         if isinstance(result, dict):
             result = [result]
-        return [e["id"] for e in result or [] if isinstance(e, dict) and e.get("id")] 
+        return [e["id"] for e in result or [] if isinstance(e, dict) and e.get("id")]
 
     async def get_events(self, group_id: str, start: datetime, end: datetime) -> list[dict]:
         """Events (with attendees) between start and end."""

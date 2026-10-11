@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import voluptuous as vol
 
 from homeassistant.config_entries import ConfigEntryState
@@ -18,9 +20,12 @@ from .const import (
     ATTR_DATE,
     ATTR_GUESTS,
     ATTR_STATUS,
+    CARD_URL,
     DOMAIN,
+    LOGGER,
     SERVICE_SET_STATUS,
     SETTABLE_STATUSES,
+    VERSION,
 )
 from .coordinator import EetlijstConfigEntry, EetlijstCoordinator
 
@@ -74,7 +79,25 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         )
 
     hass.services.async_register(DOMAIN, SERVICE_SET_STATUS, _set_status, SET_STATUS_SCHEMA)
+    await _register_card(hass)
     return True
+
+
+async def _register_card(hass: HomeAssistant) -> None:
+    """Serve the dashboard card and load it in every dashboard."""
+    if hass.http is None or "frontend" not in hass.config.components:
+        return
+    try:
+        from homeassistant.components.frontend import add_extra_js_url  # noqa: PLC0415
+        from homeassistant.components.http import StaticPathConfig  # noqa: PLC0415
+
+        path = Path(__file__).parent / "www" / "eetlijst-card.js"
+        await hass.http.async_register_static_paths(
+            [StaticPathConfig(CARD_URL, str(path), cache_headers=False)]
+        )
+        add_extra_js_url(hass, f"{CARD_URL}?v={VERSION}")
+    except Exception:  # noqa: BLE001 - card is optional, never block setup
+        LOGGER.exception("Kon de Eetlijst-kaart niet registreren")
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: EetlijstConfigEntry) -> bool:
