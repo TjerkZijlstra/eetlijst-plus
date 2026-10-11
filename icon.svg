@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FF8A3D"/>
+      <stop offset="1" stop-color="#E8512A"/>
+    </linearGradient>
+  </defs>
+  <rect width="256" height="256" rx="56" fill="url(#bg)"/>
+  <!-- plate -->
+  <circle cx="128" cy="134" r="72" fill="#FFF6EE"/>
+  <circle cx="128" cy="134" r="52" fill="none" stroke="#F4C9AE" stroke-width="5"/>
+  <!-- fork -->
+  <g fill="#FFF6EE">
+    <rect x="30" y="58" width="7" height="44" rx="3.5"/>
+    <rect x="42" y="58" width="7" height="44" rx="3.5"/>
+    <rect x="54" y="58" width="7" height="44" rx="3.5"/>
+    <path d="M28 96 h35 v6 a17 17 0 0 1 -11 16 v86 a6.5 6.5 0 0 1 -13 0 v-86 a17 17 0 0 1 -11 -16z"/>
+  </g>
+  <!-- knife -->
+  <path fill="#FFF6EE" d="M212 58 c-14 8 -20 32 -20 62 v12 h12 v72 a6.5 6.5 0 0 0 13 0 v-140 a6 6 0 0 0 -5 -6z"/>
+  <!-- check -->
+  <path d="M100 136 l20 20 l38 -40" fill="none" stroke="#E8512A" stroke-width="15" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- plus badge -->
+  <circle cx="200" cy="200" r="34" fill="#2F2A26"/>
+  <path d="M200 184 v32 M184 200 h32" stroke="#FFF6EE" stroke-width="9" stroke-linecap="round"/>
+</svg>

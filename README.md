@@ -1,21 +1,66 @@
+<img src="icon.png" width="128" alt="Eetlijst+ logo">
+
 # Eetlijst+ voor Home Assistant
 
 Zie in Home Assistant of je ingeschreven staat, schrijf jezelf in of uit, en beheer de boodschappenlijst. Werkt met de developer API van de nieuwe Eetlijst (v5).
 
-## Installeren
+Inclusief een eigen dashboardkaart in Eetlijst-stijl: je week in gekleurde rondjes, en met één tik inschrijven.
 
-1. Kopieer de map `custom_components/eetlijst_plus` naar `/config/custom_components/` van je Home Assistant (bijv. met de File editor, Samba of `scp`).
-2. Herstart Home Assistant.
-3. **Instellingen → Apparaten & diensten → Integratie toevoegen → "Eetlijst+"**.
-4. Plak je API key: ga naar <https://v5.eetlijst.nl/account> en klik op **Developer API key**.
+## Installeren via HACS
+
+1. Ga in Home Assistant naar **HACS → ⋮ → Aangepaste repositories**.
+2. Plak `https://github.com/TjerkZijlstra/eetlijst-plus`, kies type **Integratie** en klik op **Toevoegen**.
+3. Zoek **Eetlijst+** in HACS, klik op **Downloaden** en herstart Home Assistant.
+4. Ga naar **Instellingen → Apparaten & diensten → Integratie toevoegen → Eetlijst+**.
+5. Plak je API key. Die vind je op <https://v5.eetlijst.nl/account> onder **Developer API key**.
 
 Zit je in meerdere Eetlijsten, dan kies je er daarna één. Voor elke lijst kun je de integratie opnieuw toevoegen.
 
-## Wat je krijgt
+Zonder HACS kan het ook: kopieer de map `custom_components/eetlijst_plus` naar `/config/custom_components/` en herstart Home Assistant.
+
+## Dashboardkaart
+
+De kaart wordt automatisch meegeleverd. Voeg hem toe via **Kaart toevoegen → Handmatig**:
+
+```yaml
+type: custom:eetlijst-card
+```
+
+Je ziet de komende 7 dagen. Elke status is een gekleurd rondje:
+
+| Rondje | Status |
+|---|---|
+| Oranje, koksmuts | Koken |
+| Groen, vinkje | Mee-eten |
+| Lichtblauw, winkelwagen | Boodschappen |
+| Rood, kruis | Niet mee-eten |
+| Grijs, vraagteken | Weet nog niet |
+
+Tik op je eigen rondje om je status voor die dag te kiezen en het aantal gasten aan te passen. Onderaan en rechtsboven staat het totaal aantal eters, gasten meegeteld. Gesloten dagen krijgen een slotje.
+
+**Opties**
+
+| Optie | Standaard | Wat |
+|---|---|---|
+| `housemates` | `true` | `false` toont alleen je eigen rij plus de totalen |
+| `days` | `7` | Aantal dagen (1 t/m 7) |
+| `title` | naam van je lijst | Eigen titel |
+
+Voorbeeld voor een compacte kaart op je telefoon:
+
+```yaml
+type: custom:eetlijst-card
+housemates: false
+days: 5
+```
+
+Krijg je "Custom element doesn't exist: eetlijst-card"? Herstart Home Assistant en ververs je browser met Ctrl+F5. Werkt dat niet, voeg dan bij **Instellingen → Dashboards → ⋮ → Bronnen** de bron `/eetlijst_plus/eetlijst-card.js` toe als **JavaScript-module**.
+
+## Entiteiten
 
 | Entiteit | Wat |
 |---|---|
-| `select` Mijn status vandaag / morgen | Je huidige status, en direct aan te passen (Mee-eten, Koken, Boodschappen, Niet mee-eten, Weet nog niet) |
+| `select` Mijn status vandaag / morgen | Je huidige status, en direct aan te passen |
 | `binary_sensor` Ingeschreven vandaag / morgen | Aan als je koken, mee-eten of boodschappen hebt gekozen |
 | `binary_sensor` Inschrijving open | Of de lijst van vandaag nog open staat |
 | `number` Mijn gasten vandaag | Aantal gasten dat je meeneemt |
@@ -24,6 +69,8 @@ Zit je in meerdere Eetlijsten, dan kies je er daarna één. Voor elke lijst kun 
 | `sensor` per huisgenoot | Status van vandaag, met in de attributen de komende 7 dagen |
 | `todo` Boodschappenlijst | Items toevoegen, afvinken en verwijderen |
 | `sensor` API key verloopt | Wanneer je key verloopt (diagnostisch) |
+
+De icoontjes van de entiteiten wisselen mee met de status (koksmuts, bestek, winkelwagen enz.).
 
 ## Actie: `eetlijst_plus.set_status`
 
@@ -48,7 +95,7 @@ conditions:
   - condition: time
     weekday: [mon, tue, wed, thu, fri]
   - condition: state
-    entity_id: select.eetlijst_huize_test_mijn_status_vandaag   # pas aan naar jouw entity_id
+    entity_id: select.eetlijst_jouw_lijst_mijn_status_vandaag   # pas aan naar jouw entity_id
     state: ["dont_know_yet", "unknown"]
 actions:
   - action: notify.mobile_app_jouw_telefoon
@@ -65,3 +112,4 @@ Als de key verloopt, verschijnt er een melding in Home Assistant om een nieuwe i
 - Eetlijst wordt elke 2 minuten opgehaald. Na een wijziging ververst hij meteen.
 - "Boodschappen" telt mee als eter.
 - Is de lijst al gesloten, dan weigert Eetlijst de wijziging. Je ziet dan de foutmelding van Eetlijst in Home Assistant.
+- Dit is een onofficiële integratie en wordt niet door Eetlijst ondersteund.
