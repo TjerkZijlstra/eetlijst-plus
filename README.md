@@ -1,6 +1,3 @@
-<img src="icon.png" width="128" alt="Eetlijst+ logo">
-
-# Eetlijst+ voor Home Assistant
 
 Zie in Home Assistant of je ingeschreven staat, schrijf jezelf in of uit, en beheer de boodschappenlijst. Werkt met de developer API van de nieuwe Eetlijst (v5).
 
