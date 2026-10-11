@@ -6,7 +6,7 @@ from datetime import timedelta
 import logging
 
 DOMAIN = "eetlijst_plus"
-VERSION = "1.1.0"
+VERSION = "1.1.1"
 CARD_URL = f"/{DOMAIN}/eetlijst-card.js"
 LOGGER = logging.getLogger(__package__)
 

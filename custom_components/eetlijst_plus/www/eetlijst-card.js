@@ -49,7 +49,7 @@ const esc = (s) =>
 
 class EetlijstCard extends HTMLElement {
   setConfig(config) {
-    this._config = { days: 7, title: undefined, ...(config || {}) };
+    this._config = { days: 7, title: undefined, housemates: true, ...(config || {}) };
     this._picked = null; // date string of the open picker
     this._busy = false;
     this._error = null;
@@ -71,7 +71,7 @@ class EetlijstCard extends HTMLElement {
   }
 
   getCardSize() {
-    return 3 + (this._members()?.length || 3);
+    return this._config?.housemates === false ? 3 : 3 + (this._members()?.length || 3);
   }
 
   getGridOptions() {
@@ -178,7 +178,8 @@ class EetlijstCard extends HTMLElement {
       })
       .join("");
 
-    const rows = members
+    const shown = this._config.housemates === false ? members.filter((m) => m.attributes.is_me) : members;
+    const rows = shown
       .map((m) => {
         const mine = m.attributes.is_me;
         const cells = days
