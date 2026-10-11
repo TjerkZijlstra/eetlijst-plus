@@ -241,7 +241,10 @@ class EetlijstApi:
             Q_POPULATE,
             {"groupId": group_id, "date": when.strftime("%Y-%m-%d:%H:%M:%S")},
         )
-        return [e["id"] for e in data.get("queryTodaysEvents") or [] if e]
+        result = data.get("queryTodaysEvents")
+        if isinstance(result, dict):
+            result = [result]
+        return [e["id"] for e in result or [] if isinstance(e, dict) and e.get("id")] 
 
     async def get_events(self, group_id: str, start: datetime, end: datetime) -> list[dict]:
         """Events (with attendees) between start and end."""
