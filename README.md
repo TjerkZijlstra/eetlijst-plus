@@ -40,6 +40,7 @@ Tik op je eigen rondje om je status voor die dag te kiezen en het aantal gasten 
 | Optie | Standaard | Wat |
 |---|---|---|
 | `housemates` | `true` | `false` toont alleen je eigen rij plus de totalen |
+| `cook` | `true` | toont onder de titel wie er vandaag kookt; `false` verbergt die regel |
 | `days` | `7` | Aantal dagen (1 t/m 7) |
 | `title` | naam van je lijst | Eigen titel |
 

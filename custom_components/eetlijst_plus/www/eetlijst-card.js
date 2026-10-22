@@ -22,6 +22,8 @@ const TEXT = {
     closed: "Inschrijving gesloten",
     none: "Geen Eetlijst+-entiteiten gevonden. Is de integratie geladen?",
     cook: "Koken",
+    cook_label: "Kok",
+    no_cook: "Nog geen kok",
     eat_only: "Mee-eten",
     got_groceries: "Boodschappen",
     not_attending: "Niet mee-eten",
@@ -36,6 +38,8 @@ const TEXT = {
     closed: "Sign-up closed",
     none: "No Eetlijst+ entities found. Is the integration loaded?",
     cook: "Cooking",
+    cook_label: "Cook",
+    no_cook: "No cook yet",
     eat_only: "Eating",
     got_groceries: "Groceries",
     not_attending: "Not eating",
@@ -49,7 +53,7 @@ const esc = (s) =>
 
 class EetlijstCard extends HTMLElement {
   setConfig(config) {
-    this._config = { days: 7, title: undefined, housemates: true, ...(config || {}) };
+    this._config = { days: 7, title: undefined, housemates: true, cook: true, ...(config || {}) };
     this._picked = null; // date string of the open picker
     this._busy = false;
     this._error = null;
@@ -168,6 +172,14 @@ class EetlijstCard extends HTMLElement {
     );
     const openOf = (d) => members[0]?.attributes.week_open?.[d] !== false;
 
+    let cookLine = "";
+    if (this._config.cook !== false && today) {
+      const cooks = members.filter((m) => m.attributes.week?.[today] === "cook").map((m) => m.attributes.name);
+      cookLine = cooks.length
+        ? `<div class="cookline"><ha-icon icon="mdi:chef-hat"></ha-icon><span>${esc(this._t("cook_label"))}: <b>${esc(cooks.join(", "))}</b></span></div>`
+        : `<div class="cookline none"><ha-icon icon="mdi:chef-hat"></ha-icon><span>${esc(this._t("no_cook"))}</span></div>`;
+    }
+
     const cols = `grid-template-columns: minmax(70px, 1.4fr) repeat(${days.length}, minmax(0, 1fr));`;
 
     const head = days
@@ -228,7 +240,10 @@ class EetlijstCard extends HTMLElement {
     this.shadowRoot.innerHTML = `${STYLE}
       <ha-card>
         <div class="header">
-          <div class="title"><ha-icon icon="mdi:silverware-fork-knife"></ha-icon>${esc(this._groupName())}</div>
+          <div class="titlewrap">
+            <div class="title"><ha-icon icon="mdi:silverware-fork-knife"></ha-icon>${esc(this._groupName())}</div>
+            ${cookLine}
+          </div>
           <div class="totalbadge"><span class="count big">${totals[0] ?? 0}</span><span>${esc(this._t("total"))}</span></div>
         </div>
         <div class="grid">
@@ -285,6 +300,12 @@ const STYLE = `<style>
   .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; gap: 12px; }
   .title { display: flex; align-items: center; gap: 8px; font-size: 1.15rem; font-weight: 500; min-width: 0; }
   .title ha-icon { color: #F7A93B; flex: none; }
+  .titlewrap { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .cookline { display: flex; align-items: center; gap: 6px; font-size: 0.9rem; color: var(--primary-text-color); min-width: 0; }
+  .cookline span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cookline ha-icon { --mdc-icon-size: 18px; color: #F7A93B; flex: none; }
+  .cookline.none { color: var(--secondary-text-color); }
+  .cookline.none ha-icon { color: var(--secondary-text-color); }
   .totalbadge { display: flex; flex-direction: column; align-items: center; color: var(--secondary-text-color); font-size: 0.75rem; gap: 2px; flex: none; }
   .grid { display: flex; flex-direction: column; gap: 4px; }
   .row { display: grid; align-items: center; column-gap: 4px; }
