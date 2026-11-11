@@ -34,6 +34,9 @@
           "no_status": "mdi:minus-circle-outline"
         }
       },
+      "my_cook_points": {
+        "default": "mdi:star-circle"
+      },
       "token_expires": {
         "default": "mdi:key-chain"
       }

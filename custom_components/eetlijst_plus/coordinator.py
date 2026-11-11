@@ -77,6 +77,7 @@ class EetlijstData:
     members: dict[str, str]  # user_id -> name (house order)
     days: dict[date, Day]
     shopping: list[dict]
+    cook_points: dict[str, float] = field(default_factory=dict)  # user_id -> points
 
 
 def _local_midnight(day: date) -> datetime:
@@ -101,6 +102,8 @@ class EetlijstCoordinator(DataUpdateCoordinator[EetlijstData]):
         self.group_id: str = entry.data[CONF_GROUP_ID]
         self.user_id: str = self.api.user_id or ""
         self._populated: set[date] = set()
+        self._cook_points: dict[str, float] = {}
+        self._cook_points_failed = False
 
     # ------------------------------------------------------------------
     async def _async_update_data(self) -> EetlijstData:
@@ -178,7 +181,18 @@ class EetlijstCoordinator(DataUpdateCoordinator[EetlijstData]):
             )
 
         shopping = await self.api.get_list(self.group_id)
+        try:
+            self._cook_points = await self.api.get_cook_points(self.group_id, list(members))
+            self._cook_points_failed = False
+        except EetlijstAuthError:
+            raise
+        except (EetlijstError, TypeError, ValueError) as err:
+            # Cook points are a bonus: never let them break the dinner list.
+            if not self._cook_points_failed:
+                LOGGER.warning("Kon kookpunten niet ophalen: %s", err)
+            self._cook_points_failed = True
         return EetlijstData(
+            cook_points=dict(self._cook_points),
             group_name=group.get("name") or self.config_entry.data.get(CONF_GROUP_NAME, ""),
             members=members,
             days=days,
@@ -255,6 +269,12 @@ class EetlijstCoordinator(DataUpdateCoordinator[EetlijstData]):
     async def async_update_item(self, item_id: str, changes: dict) -> None:
         """Change a shopping list item."""
         await self._call(self.api.update_list_item(item_id, changes))
+
+    def cook_points_of(self, user_id: str) -> float | None:
+        """Cook points of a member (None if unknown)."""
+        if self.data is None or user_id not in self.data.cook_points:
+            return None
+        return round(self.data.cook_points[user_id], 1)
 
     def name_of(self, user_id: str) -> str:
         """Name of a member."""

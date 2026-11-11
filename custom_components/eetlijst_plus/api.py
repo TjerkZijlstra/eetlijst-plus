@@ -75,6 +75,15 @@ query Members($groupId: uuid!) {
 }
 """
 
+Q_STATS_RANGE = """
+query StatisticsRange($groupId: uuid!) {
+  eetschema_group_by_pk(id: $groupId) {
+    statistics_start_date
+    statistics_end_date
+  }
+}
+"""
+
 Q_POPULATE = """
 query AutomaticEvents($groupId: uuid!, $date: String!) {
   queryTodaysEvents(group_id: $groupId, date: $date) { id }
@@ -233,6 +242,51 @@ class EetlijstApi:
         """Group with its active members."""
         data = await self.request(Q_MEMBERS, {"groupId": group_id})
         return data.get("eetschema_group_by_pk")
+
+    async def get_cook_points(self, group_id: str, user_ids: list[str]) -> dict[str, float]:
+        """Cook points per user, calculated the way the Eetlijst app does.
+
+        Sum of the points of all dinners inside the statistics period the group
+        has set, plus the points imported from the old Eetlijst.
+        """
+        if not user_ids:
+            return {}
+        data = await self.request(Q_STATS_RANGE, {"groupId": group_id})
+        group = data.get("eetschema_group_by_pk") or {}
+        start = group.get("statistics_start_date")
+        end = group.get("statistics_end_date") or datetime.now(UTC).isoformat()
+
+        variables: dict[str, Any] = {"groupId": group_id, "end": end}
+        declarations = ["$groupId: uuid!", "$end: timestamptz!"]
+        period = "_lt: $end"
+        if start:
+            variables["start"] = start
+            declarations.append("$start: timestamptz!")
+            period += ", _gte: $start"
+
+        parts = []
+        for i, user_id in enumerate(user_ids):
+            variables[f"u{i}"] = user_id
+            declarations.append(f"$u{i}: String!")
+            parts.append(
+                f"s{i}: eetschema_event_statistics_aggregate(where: {{"
+                f"group_id: {{_eq: $groupId}}, user_id: {{_eq: $u{i}}}, "
+                f"event_start_date: {{{period}}}}}) "
+                f"{{ aggregate {{ sum {{ cook_points }} }} }}\n"
+                f"i{i}: eetschema_cook_points_import_by_pk(group_id: $groupId, user_id: $u{i}) "
+                f"{{ cook_points }}"
+            )
+        query = f"query CookPoints({', '.join(declarations)}) {{\n" + "\n".join(parts) + "\n}"
+        data = await self.request(query, variables)
+
+        points: dict[str, float] = {}
+        for i, user_id in enumerate(user_ids):
+            total = ((data.get(f"s{i}") or {}).get("aggregate") or {}).get("sum") or {}
+            imported = data.get(f"i{i}") or {}
+            points[user_id] = float(total.get("cook_points") or 0) + float(
+                imported.get("cook_points") or 0
+            )
+        return points
 
     # ---- events --------------------------------------------------------
     async def populate_dinners(self, group_id: str, when: datetime) -> list[str]:

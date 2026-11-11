@@ -109,6 +109,9 @@
           "dont_know_yet": "Don't know yet",
           "no_status": "No status"
         }
+      },
+      "my_cook_points": {
+        "name": "My cook points"
       }
     },
     "todo": {
