@@ -19,6 +19,9 @@ const TEXT = {
     you: "jij",
     choose: "Jouw status voor",
     guests: "Gasten",
+    points: "Kookpunten",
+    eaters: "Eten mee",
+    no_eaters: "Nog niemand eet mee",
     closed: "Inschrijving gesloten",
     none: "Geen Eetlijst+-entiteiten gevonden. Is de integratie geladen?",
     cook: "Koken",
@@ -35,6 +38,9 @@ const TEXT = {
     you: "you",
     choose: "Your status for",
     guests: "Guests",
+    points: "Cook points",
+    eaters: "Eating along",
+    no_eaters: "Nobody is eating yet",
     closed: "Sign-up closed",
     none: "No Eetlijst+ entities found. Is the integration loaded?",
     cook: "Cooking",
@@ -53,7 +59,7 @@ const esc = (s) =>
 
 class EetlijstCard extends HTMLElement {
   setConfig(config) {
-    this._config = { days: 7, title: undefined, housemates: true, cook: true, ...(config || {}) };
+    this._config = { days: 7, title: undefined, housemates: true, cook: true, cook_points: true, ...(config || {}) };
     this._picked = null; // date string of the open picker
     this._busy = false;
     this._error = null;
@@ -120,7 +126,7 @@ class EetlijstCard extends HTMLElement {
     const members = this._members();
     return JSON.stringify([
       this._hass?.locale?.language,
-      members.map((m) => [m.entity_id, m.state, m.attributes.week, m.attributes.week_guests, m.attributes.week_open]),
+      members.map((m) => [m.entity_id, m.state, m.attributes.week, m.attributes.week_guests, m.attributes.week_open, m.attributes.cook_points]),
     ]);
   }
 
@@ -180,6 +186,16 @@ class EetlijstCard extends HTMLElement {
         : `<div class="cookline none"><ha-icon icon="mdi:chef-hat"></ha-icon><span>${esc(this._t("no_cook"))}</span></div>`;
     }
 
+    let pointsBadge = "";
+    const pts = me?.attributes.cook_points;
+    if (this._config.cook_points !== false && typeof pts === "number") {
+      const shown = Math.round(pts * 10) / 10;
+      const cls = shown > 0 ? "pos" : shown < 0 ? "neg" : "";
+      const lang = this._hass?.locale?.language || "nl";
+      const num = shown.toLocaleString(lang, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+      pointsBadge = `<div class="totalbadge"><span class="points ${cls}">${shown > 0 ? "+" : ""}${esc(num)}</span><span>${esc(this._t("points"))}</span></div>`;
+    }
+
     const cols = `grid-template-columns: minmax(70px, 1.4fr) repeat(${days.length}, minmax(0, 1fr));`;
 
     const head = days
@@ -221,6 +237,18 @@ class EetlijstCard extends HTMLElement {
       const cur = me.attributes.week?.[d];
       const guests = me.attributes.week_guests?.[d] || 0;
       const closed = openOf(d) ? "" : `<div class="closed"><ha-icon icon="mdi:lock"></ha-icon>${esc(this._t("closed"))}</div>`;
+      const eaters = members.filter((m) => EATING.has(m.attributes.week?.[d]));
+      const eatTotal = eaters.reduce((n, m) => n + 1 + (m.attributes.week_guests?.[d] || 0), 0);
+      const eaterList = eaters.length
+        ? `<div class="eaters">${eaters
+            .map((m) => {
+              const g = m.attributes.week_guests?.[d] || 0;
+              return `<span class="eater ${m.attributes.is_me ? "self" : ""}">${this._bubble(m.attributes.week[d], 0, "small")}<span>${esc(
+                m.attributes.name
+              )}${g > 0 ? ` <b>+${g}</b>` : ""}</span></span>`;
+            })
+            .join("")}</div>`
+        : `<div class="noeaters">${esc(this._t("no_eaters"))}</div>`;
       picker = `<div class="picker ${this._busy ? "busy" : ""}">
         <div class="ptitle">${esc(this._t("choose"))} ${esc(this._dayLabel(d, true))}</div>
         ${closed}
@@ -233,6 +261,8 @@ class EetlijstCard extends HTMLElement {
           <span class="gnum">${guests}</span>
           <button class="step" data-guests="${guests + 1}"><ha-icon icon="mdi:plus"></ha-icon></button>
         </div>
+        <div class="etitle"><span>${esc(this._t("eaters"))}</span><span class="count">${eatTotal}</span></div>
+        ${eaterList}
         ${this._error ? `<div class="error">${esc(this._error)}</div>` : ""}
       </div>`;
     }
@@ -244,7 +274,10 @@ class EetlijstCard extends HTMLElement {
             <div class="title"><ha-icon icon="mdi:silverware-fork-knife"></ha-icon>${esc(this._groupName())}</div>
             ${cookLine}
           </div>
-          <div class="totalbadge"><span class="count big">${totals[0] ?? 0}</span><span>${esc(this._t("total"))}</span></div>
+          <div class="badges">
+            ${pointsBadge}
+            <div class="totalbadge"><span class="count big">${totals[0] ?? 0}</span><span>${esc(this._t("total"))}</span></div>
+          </div>
         </div>
         <div class="grid">
           <div class="row head" style="${cols}"><div></div>${head}</div>
@@ -307,6 +340,12 @@ const STYLE = `<style>
   .cookline.none { color: var(--secondary-text-color); }
   .cookline.none ha-icon { color: var(--secondary-text-color); }
   .totalbadge { display: flex; flex-direction: column; align-items: center; color: var(--secondary-text-color); font-size: 0.75rem; gap: 2px; flex: none; }
+  .badges { display: flex; align-items: flex-start; gap: 12px; flex: none; }
+  .points { display: inline-flex; align-items: center; justify-content: center; min-width: 40px; height: 40px; border-radius: 20px;
+    padding: 0 8px; box-sizing: border-box; font-weight: 700; font-size: 1.05rem; color: var(--primary-text-color);
+    background: var(--secondary-background-color); }
+  .points.pos { color: #3E9B41; background: color-mix(in srgb, #3E9B41 14%, transparent); }
+  .points.neg { color: #EF4B3C; background: color-mix(in srgb, #EF4B3C 14%, transparent); }
   .grid { display: flex; flex-direction: column; gap: 4px; }
   .row { display: grid; align-items: center; column-gap: 4px; }
   .row.me { background: color-mix(in srgb, var(--primary-color) 8%, transparent); border-radius: 12px; }
@@ -326,6 +365,7 @@ const STYLE = `<style>
     display: inline-flex; align-items: center; justify-content: center; color: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.18); flex: none; }
   .bubble ha-icon { --mdc-icon-size: calc(var(--b) * 0.58); display: inline-flex; }
   .bubble.big { --b: 44px; }
+  .bubble.small { --b: 22px; box-shadow: none; }
   .guests { position: absolute; top: -5px; right: -7px; background: var(--card-background-color, #fff); color: var(--primary-text-color);
     font-size: 0.62rem; font-weight: 700; border-radius: 8px; padding: 0 3px; box-shadow: 0 1px 2px rgba(0,0,0,.25); }
   .count { display: inline-flex; align-items: center; justify-content: center; min-width: 26px; height: 26px; border-radius: 13px;
@@ -349,6 +389,14 @@ const STYLE = `<style>
   .step:disabled { opacity: .4; cursor: default; }
   .step ha-icon { --mdc-icon-size: 18px; }
   .gnum { min-width: 18px; text-align: center; font-weight: 600; }
+  .etitle { display: flex; align-items: center; justify-content: space-between; margin-top: 14px; padding-top: 12px;
+    border-top: 1px solid var(--divider-color); font-size: 0.9rem; }
+  .eaters { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .eater { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px 3px 3px; border-radius: 999px;
+    background: var(--secondary-background-color); font-size: 0.85rem; max-width: 100%; }
+  .eater > span:last-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .eater.self { background: color-mix(in srgb, var(--primary-color) 14%, transparent); font-weight: 600; }
+  .noeaters { margin-top: 8px; color: var(--secondary-text-color); font-size: 0.85rem; }
   .error { margin-top: 10px; color: var(--error-color, #db4437); font-size: 0.85rem; }
 </style>`;
 

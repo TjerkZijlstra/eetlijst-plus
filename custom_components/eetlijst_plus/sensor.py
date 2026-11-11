@@ -28,6 +28,7 @@ async def async_setup_entry(
         [
             EatersTodaySensor(coordinator, "eaters_today"),
             CookTodaySensor(coordinator, "cook_today"),
+            MyCookPointsSensor(coordinator, "my_cook_points"),
             TokenExpirySensor(coordinator, "token_expires"),
         ]
     )
@@ -109,6 +110,31 @@ class CookTodaySensor(EetlijstEntity, SensorEntity):
         return ", ".join(cooks) if cooks else "Niemand"
 
 
+class MyCookPointsSensor(EetlijstEntity, SensorEntity):
+    """My cook points, as shown on the statistics page of Eetlijst."""
+
+    _attr_translation_key = "my_cook_points"
+    _attr_icon = "mdi:star-circle"
+    _attr_suggested_display_precision = 1
+
+    @property
+    def native_value(self) -> float | None:
+        """My points."""
+        return self.coordinator.cook_points_of(self.coordinator.user_id)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Points of every housemate."""
+        c = self.coordinator
+        return {
+            "housemates": {
+                c.name_of(uid): c.cook_points_of(uid)
+                for uid in c.data.members
+                if c.cook_points_of(uid) is not None
+            }
+        }
+
+
 class TokenExpirySensor(EetlijstEntity, SensorEntity):
     """When the API key stops working."""
 
@@ -171,6 +197,7 @@ class MemberStatusSensor(EetlijstEntity, SensorEntity):
             "order": members.index(self._uid) if self._uid in members else 99,
             "guests": att.guests if att else 0,
             "comment": att.comment if att else None,
+            "cook_points": self.coordinator.cook_points_of(self._uid),
             "week": week,
             "week_guests": week_guests,
             "week_open": week_open,

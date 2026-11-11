@@ -109,6 +109,9 @@
           "dont_know_yet": "Weet nog niet",
           "no_status": "Geen status"
         }
+      },
+      "my_cook_points": {
+        "name": "Mijn kookpunten"
       }
     },
     "todo": {

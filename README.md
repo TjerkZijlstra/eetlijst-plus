@@ -33,7 +33,7 @@ Je ziet de komende 7 dagen. Elke status is een gekleurd rondje:
 | Rood, kruis | Niet mee-eten |
 | Grijs, vraagteken | Weet nog niet |
 
-Tik op je eigen rondje om je status voor die dag te kiezen en het aantal gasten aan te passen. Onderaan en rechtsboven staat het totaal aantal eters, gasten meegeteld. Gesloten dagen krijgen een slotje.
+Tik op je eigen rondje om je status voor die dag te kiezen en het aantal gasten aan te passen. Daaronder zie je wie er die dag al mee-eet, met gasten. Rechtsboven staan je kookpunten, groen als je voor staat en rood als je achter staat. Onderaan en rechtsboven staat het totaal aantal eters, gasten meegeteld. Gesloten dagen krijgen een slotje.
 
 **Opties**
 
@@ -41,6 +41,7 @@ Tik op je eigen rondje om je status voor die dag te kiezen en het aantal gasten 
 |---|---|---|
 | `housemates` | `true` | `false` toont alleen je eigen rij plus de totalen |
 | `cook` | `true` | toont onder de titel wie er vandaag kookt; `false` verbergt die regel |
+| `cook_points` | `true` | toont je kookpunten rechtsboven; `false` verbergt ze |
 | `days` | `7` | Aantal dagen (1 t/m 7) |
 | `title` | naam van je lijst | Eigen titel |
 
@@ -64,7 +65,8 @@ Krijg je "Custom element doesn't exist: eetlijst-card"? Herstart Home Assistant 
 | `number` Mijn gasten vandaag | Aantal gasten dat je meeneemt |
 | `sensor` Eters vandaag | Aantal eters inclusief gasten, met als attributen wie kookt, mee-eet, niet eet, enz. |
 | `sensor` Kok vandaag | Naam van de kok, of "Niemand" |
-| `sensor` per huisgenoot | Status van vandaag, met in de attributen de komende 7 dagen |
+| `sensor` Mijn kookpunten | Je kookpunten zoals op de statistiekenpagina van Eetlijst, met als attribuut de punten van alle huisgenoten |
+| `sensor` per huisgenoot | Status van vandaag, met in de attributen de komende 7 dagen en de kookpunten |
 | `todo` Boodschappenlijst | Items toevoegen, afvinken en verwijderen |
 | `sensor` API key verloopt | Wanneer je key verloopt (diagnostisch) |
 
@@ -109,5 +111,6 @@ Als de key verloopt, verschijnt er een melding in Home Assistant om een nieuwe i
 
 - Eetlijst wordt elke 2 minuten opgehaald. Na een wijziging ververst hij meteen.
 - "Boodschappen" telt mee als eter.
+- Kookpunten volgen de periode (start- en einddatum) die bij de statistieken van je Eetlijst is ingesteld, net als in de app.
 - Is de lijst al gesloten, dan weigert Eetlijst de wijziging. Je ziet dan de foutmelding van Eetlijst in Home Assistant.
 - Dit is een onofficiële integratie en wordt niet door Eetlijst ondersteund.
